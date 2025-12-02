@@ -5,15 +5,17 @@ import { generateCelebrationMessage } from "../services/geminiService";
 interface InputScreenProps {
   onSubmit: (data: CelebrationData) => void;
   onReset: () => void;
+  onRefreshThemes: () => Promise<void>;
   themes: Theme[];
 }
 
-const InputScreen: React.FC<InputScreenProps> = ({ onSubmit, onReset, themes }) => {
+const InputScreen: React.FC<InputScreenProps> = ({ onSubmit, onReset, onRefreshThemes, themes }) => {
   const [guestName, setGuestName] = useState("");
   const [occasion, setOccasion] = useState<Occasion>(Occasion.Birthday);
   const [themeId, setThemeId] = useState<ThemeId>("");
   const [message, setMessage] = useState("Wishing you a very happy birthday filled with joy, laughter, and unforgettable moments. May this year bring you all the success and happiness you deserve.");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRefreshingThemes, setIsRefreshingThemes] = useState(false);
 
   // Set default theme when themes load
   useEffect(() => {
@@ -35,6 +37,12 @@ const InputScreen: React.FC<InputScreenProps> = ({ onSubmit, onReset, themes }) 
       setIsGenerating(false);
     }
   }, [guestName, occasion]);
+
+  const handleRefreshThemes = async () => {
+    setIsRefreshingThemes(true);
+    await onRefreshThemes();
+    setTimeout(() => setIsRefreshingThemes(false), 500);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,7 +149,17 @@ const InputScreen: React.FC<InputScreenProps> = ({ onSubmit, onReset, themes }) 
 
             {/* Right Column: Theme Selection */}
             <div className="flex flex-col gap-6">
-              <h3 className="text-white/80 uppercase tracking-wider text-sm font-bold border-b border-white/10 pb-2 mb-2">Display Theme</h3>
+              <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
+                <h3 className="text-white/80 uppercase tracking-wider text-sm font-bold">Display Theme</h3>
+                <button 
+                  type="button" 
+                  onClick={handleRefreshThemes}
+                  className="text-primary text-xs flex items-center gap-1 hover:text-white transition-colors"
+                >
+                  <span className={`material-symbols-outlined text-sm ${isRefreshingThemes ? 'animate-spin' : ''}`}>sync</span>
+                  Refresh
+                </button>
+              </div>
               
               <div className="grid grid-cols-2 gap-4">
                 {themes.map((theme) => (

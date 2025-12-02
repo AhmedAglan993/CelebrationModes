@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import InputScreen from "./components/InputScreen";
 import DisplayScreen from "./components/DisplayScreen";
 import { CelebrationData, Theme } from "./types";
@@ -20,16 +20,20 @@ const App: React.FC = () => {
     if (modeParam === 'display') setMode('display');
   }, []);
 
-  // 2. Scan for local custom backgrounds on mount
-  useEffect(() => {
-    const loadThemes = async () => {
-      const customThemes = await scanForLocalThemes();
-      if (customThemes.length > 0) {
-        setThemes([...DEFAULT_THEMES, ...customThemes]);
-      }
-    };
-    loadThemes();
+  // 2. Scan for local custom backgrounds function
+  const refreshThemes = useCallback(async () => {
+    const customThemes = await scanForLocalThemes();
+    if (customThemes.length > 0) {
+      setThemes([...DEFAULT_THEMES, ...customThemes]);
+    } else {
+      setThemes(DEFAULT_THEMES);
+    }
   }, []);
+
+  // Initial scan on mount
+  useEffect(() => {
+    refreshThemes();
+  }, [refreshThemes]);
 
   // 3. Subscribe to Firebase updates when in Display mode
   useEffect(() => {
@@ -98,7 +102,7 @@ const App: React.FC = () => {
         </div>
         <div className="absolute bottom-8 text-white/20 text-sm text-center">
           <p>Select a mode to generate a shareable URL.</p>
-          <p className="text-xs mt-2 opacity-50">To add custom backgrounds, place "1.jpg", "2.jpg" etc. in a "backgrounds" folder.</p>
+          <p className="text-xs mt-2 opacity-50">To add custom backgrounds, create a "backgrounds" folder and add images named "1.jpg", "2.jpg", etc.</p>
         </div>
       </div>
     );
@@ -111,7 +115,8 @@ const App: React.FC = () => {
            <InputScreen 
              themes={themes}
              onSubmit={handleStaffSubmit} 
-             onReset={handleStaffReset} 
+             onReset={handleStaffReset}
+             onRefreshThemes={refreshThemes}
            />
            <button 
              onClick={handleBackToSelect}

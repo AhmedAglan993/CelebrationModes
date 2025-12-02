@@ -46,40 +46,57 @@ export const DEFAULT_THEMES: Theme[] = [
  * Scans for local images in the /backgrounds/ folder.
  * It looks for 1.jpg, 2.jpg, 3.jpg etc. 
  * Naming convention: Files must be named sequentially starting from 1.
- * Supported extension: .jpg (simplifies scanning).
+ * Supported extensions: jpg, jpeg, png, webp.
  */
 export const scanForLocalThemes = async (): Promise<Theme[]> => {
   const localThemes: Theme[] = [];
   let index = 1;
-  const maxImages = 50; // Limit to prevent infinite loops
+  const maxImages = 50; 
+  const extensions = ['jpg', 'jpeg', 'png', 'webp'];
+
+  console.log("Starting theme scan...");
 
   while (index <= maxImages) {
-    const imageUrl = `backgrounds/${index}.jpg`;
-    
-    try {
-      // We use HEAD method (or just fetch) to see if file exists
-      const response = await fetch(imageUrl, { method: 'HEAD' });
+    let found = false;
+
+    for (const ext of extensions) {
+      // Use absolute path to ensure we scan from root, regardless of current route
+      const imageUrl = `/backgrounds/${index}.${ext}`;
       
-      if (response.ok) {
-        localThemes.push({
-          id: `local-custom-${index}`,
-          name: `Custom ${index}`,
-          previewUrl: imageUrl,
-          bgUrl: imageUrl,
-          overlayColor: 'bg-black/40' // Default overlay for custom images
-        });
-      } else {
-        // If 1.jpg exists but 2.jpg is missing, we stop scanning.
-        // This requires files to be sequential.
-        break;
+      try {
+        // Use GET instead of HEAD to avoid 405 Method Not Allowed on some static servers
+        const response = await fetch(imageUrl, { method: 'GET' });
+        
+        if (response.ok) {
+          // IMPORTANT: Check content type to ensure we didn't get the index.html fallback
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.startsWith('image/')) {
+             console.log(`Found custom theme: ${imageUrl}`);
+             localThemes.push({
+              id: `local-custom-${index}`,
+              name: `Custom ${index}`,
+              previewUrl: imageUrl,
+              bgUrl: imageUrl,
+              overlayColor: 'bg-black/40'
+            });
+            found = true;
+            break; // Stop checking extensions for this index
+          }
+        }
+      } catch (e) {
+        // Continue to next extension
       }
-    } catch (e) {
-      // Fetch error (network etc), break loop
+    }
+
+    if (!found) {
+      // If we didn't find "1.jpg" (or other extensions), we assume the sequence ends.
+      // We don't check for "2.jpg" if "1.jpg" is missing.
       break;
     }
     index++;
   }
   
+  console.log(`Scan complete. Found ${localThemes.length} custom themes.`);
   return localThemes;
 };
 
