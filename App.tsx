@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import InputScreen from "./components/InputScreen";
 import DisplayScreen from "./components/DisplayScreen";
+import InstallPrompt from "./components/InstallPrompt";
 import { CelebrationData, Theme } from "./types";
 import { updateCelebration, subscribeToCelebration, resetCelebration } from "./services/firebase";
 import { DEFAULT_THEMES, scanForLocalThemes } from "./themeConfig";
@@ -144,6 +145,9 @@ const App: React.FC = () => {
           onBack={handleBackToSelect}
         />
       )}
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </>
   );
 };
