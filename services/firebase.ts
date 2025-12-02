@@ -6,12 +6,12 @@ import { CelebrationData } from "../types";
 // TODO: REPLACE THIS WITH YOUR FIREBASE CONFIG FROM CONSOLE.FIREBASE.GOOGLE.COM
 // ------------------------------------------------------------------
 const firebaseConfig = {
-    apiKey: "AIzaSyDk2vCAZ6pfdcbxAR-gCg8D-mBGPReIhNo",
-    authDomain: "celebrationmodes.firebaseapp.com",
-    projectId: "celebrationmodes",
-    storageBucket: "celebrationmodes.firebasestorage.app",
-    messagingSenderId: "729541522594",
-    appId: "1:729541522594:web:202120be1fdb9241e693fb"
+  apiKey: "AIzaSyDk2vCAZ6pfdcbxAR-gCg8D-mBGPReIhNo",
+  authDomain: "celebrationmodes.firebaseapp.com",
+  projectId: "celebrationmodes",
+  storageBucket: "celebrationmodes.firebasestorage.app",
+  messagingSenderId: "729541522594",
+  appId: "1:729541522594:web:202120be1fdb9241e693fb"
 };
 // ------------------------------------------------------------------
 
@@ -34,8 +34,17 @@ export const updateCelebration = (data: CelebrationData) => {
   set(ref(database, 'celebrations/current'), data);
 };
 
+export const resetCelebration = () => {
+  if (!database) {
+    console.log("Mock Mode: Resetting celebration");
+    return;
+  }
+  // Setting data to null removes it, triggering the standby screen on connected displays
+  set(ref(database, 'celebrations/current'), null);
+};
+
 export const subscribeToCelebration = (callback: (data: CelebrationData | null) => void) => {
-  if (!database) return () => {};
+  if (!database) return () => { };
 
   const celebrationRef = ref(database, 'celebrations/current');
   const unsubscribe = onValue(celebrationRef, (snapshot) => {

@@ -14,9 +14,13 @@ export const generateCelebrationMessage = async (
   occasion: Occasion
 ): Promise<string> => {
   try {
-    const apiKey = process.env.API_KEY;
+    // Safety check for browser environment
+    const apiKey = (typeof process !== 'undefined' && process.env && process.env.API_KEY) ? process.env.API_KEY : '';
+    
     if (!apiKey) {
-      throw new Error("API Key not found");
+      console.warn("API Key not found in process.env.API_KEY");
+      // Return a nice fallback immediately if no key, instead of crashing
+      return `Wishing you a very happy ${occasion.toLowerCase()}!`;
     }
 
     const ai = new GoogleGenAI({ apiKey });

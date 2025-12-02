@@ -6,7 +6,8 @@ export enum Occasion {
   Other = "Other"
 }
 
-export type ThemeId = 'elegant-dark' | 'golden-lights' | 'colorful-balloons' | 'pink-flowers' | 'neon-party';
+// Changed to string to allow dynamic addition of themes from config
+export type ThemeId = string;
 
 export interface Theme {
   id: ThemeId;

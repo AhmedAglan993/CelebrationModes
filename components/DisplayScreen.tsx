@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { CelebrationData, Theme } from "../types";
+import { getThemeFromList } from "../themeConfig";
 import Sparkles from "./Sparkles";
 
 // Extend window for canvas-confetti
@@ -11,49 +12,12 @@ declare global {
 
 interface DisplayScreenProps {
   data: CelebrationData | null;
+  themes: Theme[];
   onBack: () => void;
 }
 
-const THEMES: Record<string, Theme> = {
-  'elegant-dark': {
-    id: 'elegant-dark',
-    name: 'Elegant Dark',
-    previewUrl: '',
-    bgUrl: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2342&auto=format&fit=crop',
-    overlayColor: 'bg-background-dark/80' 
-  },
-  'golden-lights': {
-    id: 'golden-lights',
-    name: 'Golden Lights',
-    previewUrl: '',
-    bgUrl: 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=2574&auto=format&fit=crop',
-    overlayColor: 'bg-black/50'
-  },
-  'colorful-balloons': {
-    id: 'colorful-balloons',
-    name: 'Balloons',
-    previewUrl: '',
-    bgUrl: 'https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?q=80&w=2574&auto=format&fit=crop',
-    overlayColor: 'bg-black/40'
-  },
-  'pink-flowers': {
-    id: 'pink-flowers',
-    name: 'Floral',
-    previewUrl: '',
-    bgUrl: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=2574&auto=format&fit=crop',
-    overlayColor: 'bg-black/40'
-  },
-  'neon-party': {
-    id: 'neon-party',
-    name: 'Neon Party',
-    previewUrl: '',
-    bgUrl: 'https://images.unsplash.com/photo-1495058489687-00439542a781?q=80&w=2670&auto=format&fit=crop',
-    overlayColor: 'bg-indigo-950/70'
-  }
-};
-
-const DisplayScreen: React.FC<DisplayScreenProps> = ({ data, onBack }) => {
-  const currentTheme = data ? (THEMES[data.themeId] || THEMES['golden-lights']) : THEMES['golden-lights'];
+const DisplayScreen: React.FC<DisplayScreenProps> = ({ data, themes, onBack }) => {
+  const currentTheme = data ? getThemeFromList(data.themeId, themes) : themes[0];
   const initializedRef = useRef(false);
 
   // Confetti Effect

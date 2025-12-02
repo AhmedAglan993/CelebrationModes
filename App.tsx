@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
 import InputScreen from "./components/InputScreen";
 import DisplayScreen from "./components/DisplayScreen";
-import { CelebrationData } from "./types";
-import { updateCelebration, subscribeToCelebration } from "./services/firebase";
+import { CelebrationData, Theme } from "./types";
+import { updateCelebration, subscribeToCelebration, resetCelebration } from "./services/firebase";
+import { DEFAULT_THEMES, scanForLocalThemes } from "./themeConfig";
 
 type AppMode = 'select' | 'staff' | 'display';
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<AppMode>('select');
   const [data, setData] = useState<CelebrationData | null>(null);
+  const [themes, setThemes] = useState<Theme[]>(DEFAULT_THEMES);
 
-  // 1. Check URL parameters on load to determine mode automatically
+  // 1. Check URL parameters on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const modeParam = params.get('mode');
@@ -18,27 +20,40 @@ const App: React.FC = () => {
     if (modeParam === 'display') setMode('display');
   }, []);
 
-  // 2. Subscribe to Firebase updates when in Display mode
+  // 2. Scan for local custom backgrounds on mount
+  useEffect(() => {
+    const loadThemes = async () => {
+      const customThemes = await scanForLocalThemes();
+      if (customThemes.length > 0) {
+        setThemes([...DEFAULT_THEMES, ...customThemes]);
+      }
+    };
+    loadThemes();
+  }, []);
+
+  // 3. Subscribe to Firebase updates when in Display mode
   useEffect(() => {
     if (mode === 'display') {
       const unsubscribe = subscribeToCelebration((newData) => {
-        if (newData) {
-          setData(newData);
-        }
+        setData(newData);
       });
       return () => unsubscribe();
     }
   }, [mode]);
 
   const handleStaffSubmit = (newData: CelebrationData) => {
-    // Send to Firebase (Realtime Database)
     updateCelebration(newData);
     alert("Sent to all connected screens!");
   };
 
+  const handleStaffReset = () => {
+    if(window.confirm("Are you sure you want to reset the screens to standby?")) {
+      resetCelebration();
+    }
+  };
+
   const setModeWithUrl = (newMode: AppMode) => {
     setMode(newMode);
-    // Update URL without refreshing so user can copy/paste it to another device
     const url = new URL(window.location.href);
     url.searchParams.set('mode', newMode);
     window.history.pushState({}, '', url);
@@ -49,13 +64,11 @@ const App: React.FC = () => {
     setData(null);
   };
 
-  // Landing Screen for Role Selection
   if (mode === 'select') {
     return (
       <div className="min-h-screen bg-background-dark flex items-center justify-center p-6 font-display">
         <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
           
-          {/* Staff Option */}
           <button 
             onClick={() => setModeWithUrl('staff')}
             className="group relative h-80 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-white/10 p-8 flex flex-col items-center justify-center gap-6 hover:border-primary/50 transition-all hover:-translate-y-1 shadow-2xl"
@@ -69,7 +82,6 @@ const App: React.FC = () => {
             </div>
           </button>
 
-          {/* Display Option */}
           <button 
             onClick={() => setModeWithUrl('display')}
             className="group relative h-80 rounded-2xl bg-gradient-to-br from-indigo-950 to-gray-900 border border-white/10 p-8 flex flex-col items-center justify-center gap-6 hover:border-indigo-400/50 transition-all hover:-translate-y-1 shadow-2xl"
@@ -84,9 +96,9 @@ const App: React.FC = () => {
           </button>
 
         </div>
-        
-        <div className="absolute bottom-8 text-white/20 text-sm">
-          Select a mode to generate a shareable URL.
+        <div className="absolute bottom-8 text-white/20 text-sm text-center">
+          <p>Select a mode to generate a shareable URL.</p>
+          <p className="text-xs mt-2 opacity-50">To add custom backgrounds, place "1.jpg", "2.jpg" etc. in a "backgrounds" folder.</p>
         </div>
       </div>
     );
@@ -96,7 +108,11 @@ const App: React.FC = () => {
     <>
       {mode === 'staff' ? (
         <div className="relative h-full">
-           <InputScreen onSubmit={handleStaffSubmit} />
+           <InputScreen 
+             themes={themes}
+             onSubmit={handleStaffSubmit} 
+             onReset={handleStaffReset} 
+           />
            <button 
              onClick={handleBackToSelect}
              className="fixed bottom-4 left-4 z-50 text-white/20 hover:text-white text-xs bg-black/50 px-2 py-1 rounded"
@@ -105,7 +121,11 @@ const App: React.FC = () => {
            </button>
         </div>
       ) : (
-        <DisplayScreen data={data} onBack={handleBackToSelect} />
+        <DisplayScreen 
+          data={data} 
+          themes={themes}
+          onBack={handleBackToSelect} 
+        />
       )}
     </>
   );

@@ -64,6 +64,11 @@
         },
       }
     </script>
+    
+    <!-- Polyfill for process (prevents ReferenceError in some libs) -->
+    <script>
+      window.process = { env: { NODE_ENV: 'production' } };
+    </script>
 
     <!-- Global Styles -->
     <style>

@@ -1,55 +1,26 @@
-import React, { useState, useCallback } from "react";
-import { Occasion, CelebrationData, Theme, ThemeId } from "../types";
+import React, { useState, useCallback, useEffect } from "react";
+import { Occasion, CelebrationData, ThemeId, Theme } from "../types";
 import { generateCelebrationMessage } from "../services/geminiService";
 
 interface InputScreenProps {
   onSubmit: (data: CelebrationData) => void;
+  onReset: () => void;
+  themes: Theme[];
 }
 
-const THEMES: Theme[] = [
-  {
-    id: 'elegant-dark',
-    name: 'Elegant Dark',
-    previewUrl: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=400&auto=format&fit=crop',
-    bgUrl: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2342&auto=format&fit=crop',
-    overlayColor: 'bg-background-dark/90'
-  },
-  {
-    id: 'golden-lights',
-    name: 'Golden Lights',
-    previewUrl: 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=400&auto=format&fit=crop',
-    bgUrl: 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=2574&auto=format&fit=crop',
-    overlayColor: 'bg-black/60'
-  },
-  {
-    id: 'colorful-balloons',
-    name: 'Balloons',
-    previewUrl: 'https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?q=80&w=400&auto=format&fit=crop',
-    bgUrl: 'https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?q=80&w=2574&auto=format&fit=crop',
-    overlayColor: 'bg-black/40'
-  },
-  {
-    id: 'pink-flowers',
-    name: 'Floral',
-    previewUrl: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=400&auto=format&fit=crop',
-    bgUrl: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=2574&auto=format&fit=crop',
-    overlayColor: 'bg-black/50'
-  },
-  {
-    id: 'neon-party',
-    name: 'Neon Party',
-    previewUrl: 'https://images.unsplash.com/photo-1495058489687-00439542a781?q=80&w=400&auto=format&fit=crop',
-    bgUrl: 'https://images.unsplash.com/photo-1495058489687-00439542a781?q=80&w=2670&auto=format&fit=crop',
-    overlayColor: 'bg-indigo-950/80'
-  }
-];
-
-const InputScreen: React.FC<InputScreenProps> = ({ onSubmit }) => {
+const InputScreen: React.FC<InputScreenProps> = ({ onSubmit, onReset, themes }) => {
   const [guestName, setGuestName] = useState("");
   const [occasion, setOccasion] = useState<Occasion>(Occasion.Birthday);
-  const [themeId, setThemeId] = useState<ThemeId>('golden-lights');
+  const [themeId, setThemeId] = useState<ThemeId>("");
   const [message, setMessage] = useState("Wishing you a very happy birthday filled with joy, laughter, and unforgettable moments. May this year bring you all the success and happiness you deserve.");
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Set default theme when themes load
+  useEffect(() => {
+    if (themes.length > 0 && !themeId) {
+      setThemeId(themes[0].id);
+    }
+  }, [themes, themeId]);
 
   const handleRegenerate = useCallback(async () => {
     if (!guestName) return; 
@@ -67,7 +38,7 @@ const InputScreen: React.FC<InputScreenProps> = ({ onSubmit }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (guestName.trim() && message.trim()) {
+    if (guestName.trim() && message.trim() && themeId) {
       onSubmit({ guestName, occasion, message, themeId });
     }
   };
@@ -85,6 +56,15 @@ const InputScreen: React.FC<InputScreenProps> = ({ onSubmit }) => {
             <p className="text-white/60 text-xs font-medium">Create a new celebration message</p>
           </div>
         </div>
+        
+        {/* Reset Button */}
+        <button 
+          onClick={onReset}
+          className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition-colors border border-red-500/20"
+        >
+          <span className="material-symbols-outlined text-lg">restart_alt</span>
+          <span className="hidden sm:inline">Reset Display</span>
+        </button>
       </div>
 
       <main className="flex-1 overflow-y-auto w-full">
@@ -164,7 +144,7 @@ const InputScreen: React.FC<InputScreenProps> = ({ onSubmit }) => {
               <h3 className="text-white/80 uppercase tracking-wider text-sm font-bold border-b border-white/10 pb-2 mb-2">Display Theme</h3>
               
               <div className="grid grid-cols-2 gap-4">
-                {THEMES.map((theme) => (
+                {themes.map((theme) => (
                   <button
                     key={theme.id}
                     type="button"
@@ -176,9 +156,13 @@ const InputScreen: React.FC<InputScreenProps> = ({ onSubmit }) => {
                     }`}
                   >
                     <img 
-                      src={theme.previewUrl} 
+                      src={theme.previewUrl || theme.bgUrl} 
                       alt={theme.name}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback if image fails to load
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x200?text=Missing+Img';
+                      }}
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                       <span className={`font-bold text-sm text-white drop-shadow-md ${themeId === theme.id ? 'text-primary' : ''}`}>
