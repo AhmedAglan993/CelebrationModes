@@ -40,10 +40,22 @@ const App: React.FC = () => {
     if (mode === 'display') {
       const unsubscribe = subscribeToCelebration((newData) => {
         setData(newData);
+        // Refresh themes when new data arrives to ensure custom backgrounds are loaded
+        refreshThemes();
       });
       return () => unsubscribe();
     }
-  }, [mode]);
+  }, [mode, refreshThemes]);
+
+  // 4. Periodically refresh themes in display mode to catch new backgrounds
+  useEffect(() => {
+    if (mode === 'display') {
+      const interval = setInterval(() => {
+        refreshThemes();
+      }, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [mode, refreshThemes]);
 
   const handleStaffSubmit = (newData: CelebrationData) => {
     updateCelebration(newData);

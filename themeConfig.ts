@@ -51,7 +51,7 @@ export const DEFAULT_THEMES: Theme[] = [
 export const scanForLocalThemes = async (): Promise<Theme[]> => {
   const localThemes: Theme[] = [];
   let index = 1;
-  const maxImages = 50; 
+  const maxImages = 50;
   const extensions = ['jpg', 'jpeg', 'png', 'webp'];
 
   console.log("Starting theme scan...");
@@ -62,17 +62,18 @@ export const scanForLocalThemes = async (): Promise<Theme[]> => {
     for (const ext of extensions) {
       // Use absolute path to ensure we scan from root, regardless of current route
       const imageUrl = `/backgrounds/${index}.${ext}`;
-      
+
       try {
         // Use GET instead of HEAD to avoid 405 Method Not Allowed on some static servers
         const response = await fetch(imageUrl, { method: 'GET' });
-        
+
         if (response.ok) {
           // IMPORTANT: Check content type to ensure we didn't get the index.html fallback
           const contentType = response.headers.get('content-type');
+          console.log(`Checking ${imageUrl}: ${response.status}, content-type: ${contentType}`);
           if (contentType && contentType.startsWith('image/')) {
-             console.log(`Found custom theme: ${imageUrl}`);
-             localThemes.push({
+            console.log(`✓ Found custom theme: ${imageUrl}`);
+            localThemes.push({
               id: `local-custom-${index}`,
               name: `Custom ${index}`,
               previewUrl: imageUrl,
@@ -81,6 +82,8 @@ export const scanForLocalThemes = async (): Promise<Theme[]> => {
             });
             found = true;
             break; // Stop checking extensions for this index
+          } else {
+            console.log(`✗ ${imageUrl} is not an image (content-type: ${contentType})`);
           }
         }
       } catch (e) {
@@ -95,7 +98,7 @@ export const scanForLocalThemes = async (): Promise<Theme[]> => {
     }
     index++;
   }
-  
+
   console.log(`Scan complete. Found ${localThemes.length} custom themes.`);
   return localThemes;
 };
